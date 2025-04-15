@@ -31,6 +31,9 @@ export const generateColorVariants = (hex: string): ColorVariants => {
 export const PRIMARY_COLOR = '#8356D2';
 export const PRIMARY = generateColorVariants(PRIMARY_COLOR);
 
+export const SECONDARY_COLOR = '#E6E6E6';
+export const SECONDARY = generateColorVariants(SECONDARY_COLOR);
+
 export const TEXT = {
   default: '#303030',
   onPrimary: '#FFFFFF',
@@ -39,5 +42,5 @@ export const TEXT = {
 };
 
 export const BORDER_RADIUS = {
-  medium: 20,
+  default: 20,
 };
