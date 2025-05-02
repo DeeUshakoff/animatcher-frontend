@@ -5,9 +5,10 @@ import {HomeScreen} from '@screens/HomeScreen';
 import {FavouritesScreen} from '@screens/FavouritesScreen';
 import {HistoryScreen} from '@screens/HistoryScreen';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {PRIMARY, TEXT, BORDER_RADIUS} from '@theme/colors';
+import {ColorVariants} from '@theme/colors';
 import {StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {TextStyles} from '@theme/fonts';
 
 type TabParamList = {
   home: undefined;
@@ -38,8 +39,8 @@ export const TabNavigator = () => {
               color={color}
             />
           ),
-          tabBarActiveTintColor: PRIMARY.default,
-          tabBarInactiveTintColor: TEXT.default,
+          tabBarActiveTintColor: ColorVariants.purple.default,
+          tabBarInactiveTintColor: ColorVariants.darkGray.default,
           tabBarStyle: [
             styles.tabBarStyleBase,
             {
@@ -47,7 +48,7 @@ export const TabNavigator = () => {
             },
           ],
           tabBarItemStyle: styles.tabBarItemStyle,
-          tabBarLabelStyle: styles.tabBarLabelStyle,
+          tabBarLabelStyle: [TextStyles.default.small, styles.tabBarLabelStyle],
         })}>
         <Tab.Screen
           name="home"
@@ -75,11 +76,9 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   tabBarItemStyle: {
-    borderRadius: BORDER_RADIUS.default,
     margin: 5,
   },
   tabBarLabelStyle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });
