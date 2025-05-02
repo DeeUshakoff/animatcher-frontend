@@ -5,7 +5,7 @@ import {HomeScreen} from '@screens/HomeScreen';
 import {FavouritesScreen} from '@screens/FavouritesScreen';
 import {HistoryScreen} from '@screens/HistoryScreen';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {PRIMARY, TEXT, BORDER_RADIUS} from '@theme/colors';
+import {PURPLE, TEXT, BORDER_RADIUS} from '@theme/colors';
 import {StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
@@ -38,7 +38,7 @@ export const TabNavigator = () => {
               color={color}
             />
           ),
-          tabBarActiveTintColor: PRIMARY.default,
+          tabBarActiveTintColor: PURPLE,
           tabBarInactiveTintColor: TEXT.default,
           tabBarStyle: [
             styles.tabBarStyleBase,
