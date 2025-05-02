@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
-import { PURPLE, GREY, TEXT } from '../theme/colors';
+import { Pressable, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import {ColorVariants} from '@theme/colors';
 
 type ButtonVariant = 'purple' | 'grey';
 
@@ -19,49 +19,49 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const [isPressed, setIsPressed] = useState(false);
 
-  const handlePressIn = () => setIsPressed(true);
-  const handlePressOut = () => setIsPressed(false);
-
-  const getButtonState = () => {
-    if (inactive) return 'inactive';
-    return isPressed ? 'pressed' : 'default';
+  const handlePressIn = () => {
+    setIsPressed(true);
   };
 
-  const state = getButtonState();
-  const colors = variant === 'purple' ? PURPLE : GREY;
-  const textColors = {
-    default: variant === 'purple' ? TEXT.onPrimary : TEXT.default,
-    pressed: variant === 'purple' ? TEXT.onPressed : TEXT.default,
-    inactive: variant === 'purple' ? TEXT.onDisabled : GREY.pressed,
+  const handlePressOut = () => {
+    setIsPressed(false);
   };
+
+  const handlePress = () => {
+    if (!inactive && onPress) {
+      onPress();
+    }
+  };
+
+  const state = inactive ? 'inactive' : isPressed ? 'pressed' : 'active';
+  const style = styles[variant][state];
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={inactive}
-      style={({ pressed }) => [
-        styles.base.button,
-        {
-          backgroundColor: inactive 
-            ? colors.disabled 
-            : pressed 
-              ? colors.pressed 
-              : colors.default,
-        },
-      ]}
+      style={[styles.base.button, style.button]}
     >
-      <Text style={[
-        styles.base.text,
-        {
-          color: textColors[state],
-        },
-      ]}>
-        {children}
-      </Text>
+      <Text style={[styles.base.text, style.text]}>{children}</Text>
     </Pressable>
   );
+};
+
+type ButtonStyleSet = {
+  active: {
+    button: ViewStyle;
+    text: TextStyle;
+  };
+  inactive: {
+    button: ViewStyle;
+    text: TextStyle;
+  };
+  pressed: {
+    button: ViewStyle;
+    text: TextStyle;
+  };
 };
 
 const styles = StyleSheet.create({
@@ -82,6 +82,34 @@ const styles = StyleSheet.create({
       textAlign: 'center',
     },
   },
+  purple: {
+    active: {
+      button: { backgroundColor: ColorVariants.purple.default },
+      text: { color: 'white' },
+    },
+    inactive: {
+      button: { backgroundColor: ColorVariants.purple.ultraLight },
+      text: { color: ColorVariants.purple.dark },
+    },
+    pressed: {
+      button: { backgroundColor: ColorVariants.purple.dark },
+      text: { color: 'white' },
+    },
+  } as ButtonStyleSet,
+  grey: {
+    active: {
+      button: { backgroundColor: ColorVariants.gray.default },
+      text: { color: 'black' },
+    },
+    inactive: {
+      button: { backgroundColor: ColorVariants.gray.ultraLight },
+      text: { color: ColorVariants.darkGray.default },
+    },
+    pressed: {
+      button: { backgroundColor: ColorVariants.gray.dark },
+      text: { color: 'black' },
+    },
+  } as ButtonStyleSet,
 });
 
 export default Button;
