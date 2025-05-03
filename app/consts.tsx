@@ -1,0 +1,1 @@
+export const API_BASE_URL = 'http://localhost:8000' // localhost:8000 на эмуле не работает, как вариант использовать айпишник пк с портом :8000 )))
