@@ -7,29 +7,38 @@ import Button from '@components/Button.tsx';
 import {TextStyles} from '@theme/fonts.ts';
 import {HeaderRightComponent} from '@components/Test/HeaderRight.tsx';
 import {useTestResult} from '@/hooks/useTestResult.ts';
+import {StackNavigationProp} from '@react-navigation/stack';
 
 type Route = RouteProp<RootStackParamList, 'Test'>;
 
 export const TestScreen = () => {
   const {params} = useRoute<Route>();
   const test = params?.test;
-  const {progress} = useTestProgress(test.id);
+  const {progress, resetProgress} = useTestProgress(test.id);
   const {getResult} = useTestResult();
-
+  const {deleteResult} = useTestResult();
   const result = getResult(test?.id);
-  console.log(result, test?.id);
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<StackNavigationProp<RootStackParamList, 'Tabs'>>();
 
   const handleStart = () => {
     navigation.navigate('TestPass', {test: test});
   };
 
+  const handleReset = () => {
+    resetProgress();
+    deleteResult(test.id);
+    navigation.navigate('TestPass', {test: test, reset: true});
+  };
+
   React.useEffect(() => {
     navigation.setOptions({
-      title: test.title,
+      headerTitle: () => (
+        <Text style={TextStyles.headline.medium}>{test.title}</Text>
+      ),
       headerRight: () => <HeaderRightComponent test={test} />,
     });
-  }, [navigation]);
+  }, [navigation, test]);
   return (
     <View style={styles.container}>
       <View>
@@ -47,7 +56,7 @@ export const TestScreen = () => {
 
             <View style={styles.buttonsContainer}>
               <View style={styles.buttonWrapper}>
-                <Button variant={'grey'} onPress={handleStart}>
+                <Button variant={'grey'} onPress={handleReset}>
                   again
                 </Button>
               </View>
@@ -59,18 +68,12 @@ export const TestScreen = () => {
         ) : (
           <View style={styles.buttonsContainer}>
             <View style={styles.buttonWrapper}>
-              <Button onPress={handleStart}>Продолжить</Button>
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button
-                onPress={() =>
-                  navigation.navigate('TestPass', {
-                    test: params.test,
-                    reset: true,
-                  })
-                }>
+              <Button variant={'grey'} onPress={handleReset}>
                 again
               </Button>
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button onPress={handleStart}>continue</Button>
             </View>
           </View>
         )

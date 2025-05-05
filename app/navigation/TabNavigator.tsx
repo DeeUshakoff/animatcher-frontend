@@ -27,15 +27,12 @@ export const TabNavigator = () => {
   const insets = useSafeAreaInsets();
 
   return (
-    //
-    // <StatusBar
-    //   backgroundColor="transparent"
-    //   barStyle={Platform.OS === 'android' ? 'dark-content' : 'default'}
-    // />
     <SafeAreaView style={styles.safeAreaStyle}>
       <Tab.Navigator
         safeAreaInsets={insets}
         screenOptions={({route}) => ({
+          headerShadowVisible: false,
+          headerTitleStyle: TextStyles.headline.medium,
           tabBarIcon: ({color, size}) => (
             <MaterialIcons
               name={TAB_ICONS[route.name]}

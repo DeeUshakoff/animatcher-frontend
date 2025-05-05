@@ -5,23 +5,38 @@ import {useTestProgress} from '@/hooks/useTestProgress';
 import Button from '@components/Button.tsx';
 import {SelectableItem} from '@components/SelectableItem.tsx';
 import {TextStyles} from '@theme/fonts.ts';
+import {HeaderRightComponent} from '@components/Test/HeaderRight.tsx';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from '@navigation/types.ts';
 
 export const TestPassScreen = () => {
   const {params} = useRoute<any>();
   const {test, reset} = params;
-  const navigation = useNavigation();
-  const {progress, updateProgress, resetProgress} = useTestProgress(test.id);
+  const navigation =
+    useNavigation<StackNavigationProp<RootStackParamList, 'Tabs'>>();
+  const {progress, updateProgress} = useTestProgress(test.id);
 
-  useEffect(() => {
-    if (reset) {
-      resetProgress();
-    }
-  }, [reset]);
-
-  const currentIndex = progress?.currentQuestionIndex || 0;
+  const currentIndex = progress ? progress.currentQuestionIndex : 0;
   const selectedOptions = progress?.selectedOptions || [];
-
   const question = test.questions[currentIndex];
+  const updateHeader = (progressIndex: number) => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <Text style={TextStyles.headline.default}>{test.title}</Text>
+      ),
+      headerRight: () => (
+        <HeaderRightComponent
+          test={test}
+          progress={progressIndex}
+          questionsLength={test.questions.length}
+          isPassing
+        />
+      ),
+    });
+  };
+  useEffect(() => {
+    updateHeader(currentIndex + 1);
+  }, [navigation, reset]);
 
   const handleSelect = (optionId: string) => {
     const updated = [...selectedOptions];
@@ -35,6 +50,29 @@ export const TestPassScreen = () => {
   const goNext = () => {
     if (currentIndex + 1 < test.questions.length) {
       updateProgress({currentQuestionIndex: currentIndex + 1});
+      updateHeader(currentIndex + 1 === 1 ? 2 : currentIndex + 2);
+    } else {
+      navigation.replace('TestResult', {
+        testId: test.id,
+        selectedOptions,
+      });
+    }
+  };
+  const goBack = () => {
+    if (currentIndex - 1 >= 0) {
+      updateProgress({currentQuestionIndex: currentIndex - 1});
+
+      const getShownIndex = () => {
+        if (currentIndex - 1 === 1) {
+          return 2;
+        }
+        if (currentIndex - 2 <= 0) {
+          return 1;
+        }
+        return currentIndex - 2;
+      };
+
+      updateHeader(getShownIndex());
     } else {
       navigation.navigate('TestResult', {
         testId: test.id,
@@ -42,7 +80,6 @@ export const TestPassScreen = () => {
       });
     }
   };
-
   return (
     <View style={styles.container}>
       <View>
@@ -65,7 +102,21 @@ export const TestPassScreen = () => {
           )}
         />
         <View style={styles.buttonsContainer}>
-          <Button onPress={goNext}>next</Button>
+          <View style={styles.buttonWrapper}>
+            <Button
+              inactive={currentIndex === 0}
+              variant={'grey'}
+              onPress={goBack}>
+              back
+            </Button>
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              inactive={selectedOptions[currentIndex] == null}
+              onPress={goNext}>
+              next
+            </Button>
+          </View>
         </View>
       </View>
     </View>
@@ -90,13 +141,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   buttonsContainer: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 10,
+    width: '100%',
   },
   bottomContainer: {
     gap: 50,
   },
   optionItemContainer: {
     marginBottom: 10,
+  },
+  buttonWrapper: {
+    flex: 1,
   },
 });

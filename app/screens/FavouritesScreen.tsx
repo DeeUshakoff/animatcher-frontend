@@ -1,39 +1,31 @@
-import {useState, useEffect} from 'react';
-import {View, Text, ActivityIndicator, StyleSheet} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, StyleSheet, ScrollView, RefreshControl} from 'react-native';
 import {fetchTests} from '@/api/apiService';
 import TestCard from '@/components/TestCard';
 import {Test} from '@/models/TestModel';
-import {getFavorites} from '@/storage/localStorage.ts';
+import {useFavorites} from '@/hooks/useFavorites.ts';
 
 export const FavouritesScreen = () => {
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const favourites = getFavorites();
+  const {favorites} = useFavorites();
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const data: Test[] = await fetchTests();
+
+      setTests(data.filter(item => favorites.includes(item.id)));
+    } catch (err) {
+      setError(err.message || 'Failed to load tests');
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const data: Test[] = await fetchTests();
-
-        setTests(data.filter(item => favourites.includes(item.id)));
-      } catch (err) {
-        setError(err.message || 'Failed to load tests');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
-
-  if (loading) {
-    return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
 
   if (error) {
     return (
@@ -44,11 +36,15 @@ export const FavouritesScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={loadData} />
+      }>
       {tests.map(test => (
         <TestCard key={test.id} test={test} />
       ))}
-    </View>
+    </ScrollView>
   );
 };
 

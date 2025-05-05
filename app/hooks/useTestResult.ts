@@ -37,7 +37,9 @@ export const useTestResult = () => {
 
   const deleteResult = useCallback(
     (testId: string) => {
-      if (!resultsMap) {return;}
+      if (!resultsMap) {
+        return;
+      }
       const updated = {...resultsMap};
       delete updated[testId];
       setResultsMap(updated);
@@ -45,9 +47,13 @@ export const useTestResult = () => {
     [resultsMap, setResultsMap],
   );
 
+  const getCompletedTests = (): Record<string, TestResult> => {
+    return results;
+  };
   return {
     results,
     getResult,
+    getCompletedTests,
     saveResult,
     deleteResult,
   };

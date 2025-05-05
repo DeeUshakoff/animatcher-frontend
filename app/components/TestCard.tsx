@@ -7,8 +7,10 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigation/types.ts';
 import {Test} from '@/models/TestModel.ts';
-import {getTestProgress, getTestResult} from '@/storage/localStorage.ts';
 import {useFavorites} from '@/hooks/useFavorites.ts';
+import {useTestProgress} from '@/hooks/useTestProgress.ts';
+import {useTestResult} from '@/hooks/useTestResult.ts';
+import {TextStyles} from '@theme/fonts.ts';
 
 type TestCardProps = {
   test: Test;
@@ -16,10 +18,27 @@ type TestCardProps = {
 
 const TestCard: React.FC<TestCardProps> = ({test}) => {
   const {isFavorite, addToFavorites, removeFromFavorites} = useFavorites();
-
-  const [liked, setLiked] = useState<boolean>(isFavorite(test.id));
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, 'Tabs'>>();
+  const {progress, resetProgress} = useTestProgress(test.id);
+  const {getResult, deleteResult} = useTestResult();
+  const [liked, setLiked] = useState<boolean>(isFavorite(test.id));
+
+  const testResult = getResult(test.id);
+  const handleResultPress = () => {
+    if (testResult) {
+      navigation.push('TestResult', {
+        testId: test.id,
+        selectedOptions: testResult.selectedOptions,
+      });
+    }
+  };
+
+  const handleAgainPress = () => {
+    resetProgress();
+    deleteResult(test.id);
+    navigation.navigate('TestPass', {test: test});
+  };
 
   const handlePress = () => {
     navigation.navigate('Test', {test: test});
@@ -34,9 +53,6 @@ const TestCard: React.FC<TestCardProps> = ({test}) => {
     }
   };
 
-  const testProgress = getTestProgress(test.id);
-  const testResult = getTestResult(test.id);
-
   return (
     <TouchableOpacity onPress={handlePress} style={styles.card}>
       <View
@@ -47,11 +63,20 @@ const TestCard: React.FC<TestCardProps> = ({test}) => {
           justifyContent: 'space-around',
         }}>
         <View style={styles.cardInfo}>
-          <Text style={styles.label} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            style={[
+              TextStyles.headline.medium,
+              {color: ColorVariants.darkGray.default},
+            ]}
+            numberOfLines={1}
+            ellipsizeMode="tail">
             {test.title}
           </Text>
           <Text
-            style={styles.description}
+            style={[
+              TextStyles.default.default,
+              {color: ColorVariants.darkGray.default},
+            ]}
             numberOfLines={3}
             ellipsizeMode="tail">
             {test.description}
@@ -63,20 +88,24 @@ const TestCard: React.FC<TestCardProps> = ({test}) => {
             name={liked ? 'heart' : 'heart-outline'}
             size={24}
             color={
-              liked ? ColorVariants.purple.default : ColorVariants.gray.default
+              liked ? ColorVariants.purple.default : ColorVariants.gray.dark
             }
           />
         </TouchableOpacity>
       </View>
 
-      {testProgress ? (
+      {progress ? (
         <View style={styles.buttonsContainer}>
           <View style={styles.buttonWrapper}>
-            <Button variant="grey">again</Button>
+            <Button onPress={handleAgainPress} variant="grey">
+              again
+            </Button>
           </View>
           {testResult ? (
             <View style={styles.buttonWrapper}>
-              <Button variant="grey">result</Button>
+              <Button onPress={handleResultPress} variant="grey">
+                result
+              </Button>
             </View>
           ) : (
             <View style={styles.buttonWrapper}>
@@ -91,13 +120,12 @@ const TestCard: React.FC<TestCardProps> = ({test}) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: ColorVariants.gray.light,
     padding: 15,
     borderRadius: ApplicationBorderRadius.default,
     alignItems: 'flex-start',
     margin: 10,
     alignSelf: 'center',
-    height: '300px',
     width: '100%',
   },
   cardInfo: {
@@ -116,18 +144,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
-  label: {
-    fontSize: 20,
-    fontWeight: 500,
-    color: '#000',
-    overflow: 'hidden',
-  },
-  description: {
-    fontSize: 20,
-    marginTop: 5,
-    color: '#000',
-    overflow: 'hidden',
-  },
   likeButton: {
     padding: 8,
   },
@@ -138,18 +154,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    fontSize: 14,
-    color: '#000',
   },
   buttonsContainer: {
     marginTop: 10,

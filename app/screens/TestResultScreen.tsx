@@ -19,12 +19,14 @@ export const TestResultScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleTestPage = () => {
+    navigation.goBack();
+  };
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         const data = await passTest(testId, selectedOptions);
-
 
         const newResult: TestResult = {
           testId: testId,
@@ -34,9 +36,12 @@ export const TestResultScreen = () => {
         };
         setResult(newResult);
         saveResult(newResult);
-        // if (result) {
-        //   saveResult(result);
-        // }
+
+        navigation.setOptions({
+          headerTitle: () => (
+            <Text style={TextStyles.headline.default}>Test results</Text>
+          ),
+        });
       } catch (err) {
         setError(err.message || 'Failed to load tests');
       } finally {
@@ -68,9 +73,15 @@ export const TestResultScreen = () => {
         <Text style={TextStyles.default.default}>You are</Text>
         <Text style={TextStyles.headline.large}>{result?.name}</Text>
       </View>
-
       <View style={styles.buttonsContainer}>
-        <Button onPress={() => navigation.navigate('Tabs')}>home</Button>
+        <View style={styles.buttonWrapper}>
+          <Button variant={'grey'} onPress={handleTestPage}>
+            test's page
+          </Button>
+        </View>
+        <View style={styles.buttonWrapper}>
+          <Button>share</Button>
+        </View>
       </View>
     </View>
   );
@@ -94,8 +105,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   buttonsContainer: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 10,
+    width: '100%',
+  },
+  buttonWrapper: {
+    flex: 1,
   },
   bottomContainer: {
     gap: 50,
