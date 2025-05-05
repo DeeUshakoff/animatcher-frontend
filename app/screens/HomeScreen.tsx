@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { View, Text, ActivityIndicator, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { fetchTests, searchTestsByName } from '@/api/apiService';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, ActivityIndicator, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { fetchTests, getTestsWithFilters, searchTestsByName } from '@/api/apiService';
 import TestCard from '@/components/TestCard';
 import { ColorVariants, ApplicationBorderRadius } from '@/theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FiltrationWindow from '@/components/FiltrationWindow'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TestItem {
   id: string;
@@ -22,23 +23,40 @@ export const HomeScreen = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [sortOption, setSortOption] = useState<'default' | 'title' | 'date'>('default');
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const [filtersUsing, setFiltersUsing] = useState(false);
+  
+  const loadTests = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [franchises, tags, sortDirection] = await Promise.all([
+        AsyncStorage.getItem('franchises'),
+        AsyncStorage.getItem('tags'),
+        AsyncStorage.getItem('sortDirection')
+      ]);
+
+      const tests = await (franchises || tags || sortDirection 
+        ? getTestsWithFilters(franchises, tags, sortDirection)
+        : fetchTests());
+
+      const hasActive = !!(franchises || tags || sortDirection);
+      setFiltersUsing(hasActive);
+      setInitialTests(tests);
+      setFilteredTests(tests);
+    } catch (err) {
+      setError(err.message || 'Failed to load tests');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleFiltersChanged = useCallback(() => {
+    loadTests();
+  }, [loadTests]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchTests();
-        setInitialTests(data);
-        setFilteredTests(data);
-      } catch (err) {
-        setError(err.message || 'Failed to load tests');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+    loadTests();
+  }, [loadTests]);
 
   useEffect(() => {
     return () => {
@@ -77,30 +95,17 @@ export const HomeScreen = () => {
   const showInitialTests = filteredTests === null || searchValue.length < 3;
   const testsToShow = showInitialTests ? initialTests : filteredTests || [];
 
-  const applyFilters = (sortBy: 'default' | 'title' | 'date') => {
-    setSortOption(sortBy);
-    setShowFilters(false);
-    
-    let sortedTests = [...(filteredTests || initialTests)];
-    
-    switch(sortBy) {
-      case 'title':
-        sortedTests.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'date':
-        // Предполагаем, что у тестов есть поле date, если нет - нужно добавить
-        // sortedTests.sort((a, b) => new Date(b.date) - new Date(a.date));
-        break;
-      default:
-        sortedTests = [...initialTests];
+  const applyFilters = useCallback(async () => {
+    try {
+      await loadTests();
+    } catch (error) {
+      console.error('Error applying filters:', error);
     }
-    
-    setFilteredTests(sortedTests);
-  };
+  }, [loadTests]);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, padding: 16 }}>
         <View style={styles.filtrationContainer}>
           <View style={styles.inputContainer}>
             <TextInput
@@ -111,11 +116,13 @@ export const HomeScreen = () => {
               onChangeText={handleSearch}
             />
           </View>
-          <Icon
-            name="sort-variant"
-            size={36}
-            color={ColorVariants.gray.dark}
-          />
+          <TouchableOpacity onPress={() => setShowFilters(true)}>
+            <Icon
+              name="sort-variant"
+              size={36}
+              color={filtersUsing ? ColorVariants.purple.default : ColorVariants.gray.dark}
+            />
+          </TouchableOpacity>
         </View>
         <ActivityIndicator size="large" />
       </View>
@@ -146,7 +153,7 @@ export const HomeScreen = () => {
           <Icon
             name="sort-variant"
             size={36}
-            color={ColorVariants.gray.dark}
+            color={filtersUsing ? ColorVariants.purple.default : ColorVariants.gray.dark}
           />
         </TouchableOpacity>
       </View>
@@ -155,12 +162,12 @@ export const HomeScreen = () => {
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" />
         </View>
-      ) : !showInitialTests && testsToShow.length === 0 ? (
+      ) : ((!showInitialTests && testsToShow.length === 0) || (!testsToShow)) ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Nothing found</Text>
         </View>
       ) : (
-        testsToShow.map(test => (
+        testsToShow?.map(test => (
           <TestCard
             key={test.id}
             id={test.id}
@@ -175,6 +182,7 @@ export const HomeScreen = () => {
         onClose={() => setShowFilters(false)}
         onApply={applyFilters}
         currentSort={sortOption}
+        onFiltersChanged={handleFiltersChanged}
       />
     </View>
   );
