@@ -42,7 +42,7 @@ const TestCard: React.FC<TestCardProps> = ({ id, label, description }) => {
           <Icon
             name={liked ? 'heart' : 'heart-outline'}
             size={24}
-            color={liked ? ColorVariants.purple.default : ColorVariants.gray.default}
+            color={liked ? ColorVariants.purple.default : ColorVariants.darkGray.light}
           />
         </TouchableOpacity>
       </View>
@@ -109,18 +109,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    fontSize: 14,
-    color: '#000',
   },
   buttonsContainer: {
     marginTop: 10,
