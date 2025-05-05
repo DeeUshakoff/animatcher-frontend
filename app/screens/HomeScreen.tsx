@@ -1,16 +1,11 @@
-import { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { fetchTests } from '@/api/apiService';
+import {useState, useEffect} from 'react';
+import {View, Text, ActivityIndicator, StyleSheet} from 'react-native';
+import {fetchTests} from '@/api/apiService';
 import TestCard from '@/components/TestCard';
-
-interface TestItem {
-  id: string;
-  title: string;
-  description: string
-}
+import {Test} from '@/models/TestModel';
 
 export const HomeScreen = () => {
-  const [tests, setTests] = useState<TestItem[]>([]);
+  const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +27,7 @@ export const HomeScreen = () => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.container}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -40,17 +35,26 @@ export const HomeScreen = () => {
 
   if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'red' }}>{error}</Text>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{color: 'red'}}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <View style={{flex: 1, padding: 16}}>
       {tests.map(test => (
-        <TestCard id={test.id} label={test.title} description={test.description}/>
+        <TestCard key={test.id} test={test} />
       ))}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
