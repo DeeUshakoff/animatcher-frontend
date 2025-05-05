@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ActivityIndicator, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { fetchTests, getTestsWithFilters, searchTestsByName } from '@/api/apiService';
 import TestCard from '@/components/TestCard';
 import { ColorVariants, ApplicationBorderRadius } from '@/theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FiltrationWindow from '@/components/FiltrationWindow'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import useFavourites from '@/hooks/useFavourites';
+import { useIsFocused } from '@react-navigation/native';
 
 interface TestItem {
   id: string;
@@ -24,6 +26,8 @@ export const HomeScreen = () => {
   const [sortOption, setSortOption] = useState<'default' | 'title' | 'date'>('default');
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const [filtersUsing, setFiltersUsing] = useState(false);
+  const { favourites, toggleFavourite, loadFavourites } = useFavourites();
+  const isFocused = useIsFocused();
   
   const loadTests = useCallback(async () => {
     try {
@@ -57,6 +61,12 @@ export const HomeScreen = () => {
   useEffect(() => {
     loadTests();
   }, [loadTests]);
+
+  useEffect(() => {
+    if (isFocused) {
+      loadFavourites();
+    }
+  }, [isFocused]);
 
   useEffect(() => {
     return () => {
@@ -173,6 +183,8 @@ export const HomeScreen = () => {
             id={test.id}
             label={test.title}
             description={test.description}
+            isLiked={favourites.some(fav => fav.id === test.id)}
+            onToggleFavourite={() => toggleFavourite(test)}
           />
         ))
       )}
