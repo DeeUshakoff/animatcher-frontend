@@ -1,10 +1,11 @@
 import { ColorVariants } from '@/theme/colors';
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   View,
   Text,
   TouchableOpacity, 
   StyleSheet,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Button from './Button';
@@ -13,11 +14,17 @@ type TestCardProps = {
   id: string;
   label: string;
   description: string;
+  isLiked: boolean;
+  onToggleFavourite: () => void;
 };
 
-const TestCard: React.FC<TestCardProps> = ({ id, label, description }) => {
-  const [liked, setLiked] = useState(false);
-
+const TestCard: React.FC<TestCardProps> = ({ 
+  id, 
+  label, 
+  description, 
+  isLiked, 
+  onToggleFavourite 
+}) => {
   return (
     <View style={styles.card}>
       <View style={{display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around'}}>
@@ -38,11 +45,11 @@ const TestCard: React.FC<TestCardProps> = ({ id, label, description }) => {
           </Text>
         </View>
 
-        <TouchableOpacity onPress={() => setLiked(!liked)}>
+        <TouchableOpacity onPress={onToggleFavourite}>
           <Icon
-            name={liked ? 'heart' : 'heart-outline'}
+            name={isLiked ? 'heart' : 'heart-outline'}
             size={24}
-            color={liked ? ColorVariants.purple.default : ColorVariants.darkGray.light}
+            color={isLiked ? ColorVariants.purple.default : ColorVariants.darkGray.light}
           />
         </TouchableOpacity>
       </View>
