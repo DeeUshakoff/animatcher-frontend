@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Pressable, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import {ColorVariants} from '@theme/colors';
+import { ColorVariants, ApplicationBorderRadius } from '@theme/colors';
 
 type ButtonVariant = 'purple' | 'grey';
 
 interface ButtonProps {
   variant?: ButtonVariant;
   inactive?: boolean;
+  light?: boolean;
   onPress?: () => void;
   children: React.ReactNode;
 }
@@ -14,6 +15,7 @@ interface ButtonProps {
 const Button: React.FC<ButtonProps> = ({
   variant = 'purple',
   inactive = false,
+  light = false,
   onPress,
   children,
 }) => {
@@ -33,7 +35,15 @@ const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const state = inactive ? 'inactive' : isPressed ? 'pressed' : 'active';
+  // Новая логика определения состояния
+  const getButtonState = () => {
+    if (inactive) return 'inactive';
+    if (isPressed) return 'pressed';
+    if (light) return 'light';
+    return 'active';
+  };
+
+  const state = getButtonState();
   const style = styles[variant][state];
 
   return (
@@ -58,6 +68,10 @@ type ButtonStyleSet = {
     button: ViewStyle;
     text: TextStyle;
   };
+  light: { // Новый тип состояния
+    button: ViewStyle;
+    text: TextStyle;
+  };
   pressed: {
     button: ViewStyle;
     text: TextStyle;
@@ -68,10 +82,10 @@ const styles = StyleSheet.create({
   base: {
     button: {
       width: '100%',
-      borderRadius: 25,
+      borderRadius: ApplicationBorderRadius.default,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingVertical: 20,
+      paddingVertical: 15,
     },
     text: {
       fontFamily: 'Inter',
@@ -91,6 +105,10 @@ const styles = StyleSheet.create({
       button: { backgroundColor: ColorVariants.purple.ultraLight },
       text: { color: ColorVariants.purple.dark },
     },
+    light: {
+      button: { backgroundColor: ColorVariants.purple.ultraLight },
+      text: { color: ColorVariants.purple.default },
+    },
     pressed: {
       button: { backgroundColor: ColorVariants.purple.dark },
       text: { color: 'white' },
@@ -102,6 +120,10 @@ const styles = StyleSheet.create({
       text: { color: 'black' },
     },
     inactive: {
+      button: { backgroundColor: ColorVariants.gray.ultraLight },
+      text: { color: ColorVariants.darkGray.default },
+    },
+    light: {
       button: { backgroundColor: ColorVariants.gray.ultraLight },
       text: { color: ColorVariants.darkGray.default },
     },
