@@ -1,13 +1,24 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ActivityIndicator, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { fetchTests, getTestsWithFilters, searchTestsByName } from '@/api/apiService';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
+import {
+  fetchTests,
+  getTestsWithFilters,
+  searchTestsByName,
+} from '@/api/apiService';
 import TestCard from '@/components/TestCard';
-import { ColorVariants, ApplicationBorderRadius } from '@/theme/colors';
+import {ColorVariants, ApplicationBorderRadius} from '@/theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import FiltrationWindow from '@/components/FiltrationWindow'
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import useFavourites from '@/hooks/useFavourites';
-import { useIsFocused } from '@react-navigation/native';
+import FiltrationWindow from '@/components/FiltrationWindow';
+import {storage} from '@/storage/localStorage.ts';
 
 interface TestItem {
   id: string;
@@ -23,25 +34,23 @@ export const HomeScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [sortOption, setSortOption] = useState<'default' | 'title' | 'date'>('default');
+  const [sortOption, setSortOption] = useState<'default' | 'title' | 'date'>(
+    'default',
+  );
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const [filtersUsing, setFiltersUsing] = useState(false);
-  const { favourites, toggleFavourite, loadFavourites } = useFavourites();
-  const isFocused = useIsFocused();
-  
+
   const loadTests = useCallback(async () => {
     try {
       setLoading(true);
+      const franchises = storage.getString('franchises');
+      const tags = storage.getString('tags');
+      const sortDirection = storage.getString('sortDirection');
 
-      const [franchises, tags, sortDirection] = await Promise.all([
-        AsyncStorage.getItem('franchises'),
-        AsyncStorage.getItem('tags'),
-        AsyncStorage.getItem('sortDirection')
-      ]);
-
-      const tests = await (franchises || tags || sortDirection 
-        ? getTestsWithFilters(franchises, tags, sortDirection)
-        : fetchTests());
+      const tests =
+        franchises || tags || sortDirection
+          ? await getTestsWithFilters(franchises, tags, sortDirection)
+          : await fetchTests();
 
       const hasActive = !!(franchises || tags || sortDirection);
       setFiltersUsing(hasActive);
@@ -61,12 +70,6 @@ export const HomeScreen = () => {
   useEffect(() => {
     loadTests();
   }, [loadTests]);
-
-  useEffect(() => {
-    if (isFocused) {
-      loadFavourites();
-    }
-  }, [isFocused]);
 
   useEffect(() => {
     return () => {
@@ -113,42 +116,20 @@ export const HomeScreen = () => {
     }
   }, [loadTests]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, padding: 16 }}>
-        <View style={styles.filtrationContainer}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="search"
-              placeholderTextColor={ColorVariants.darkGray.light}
-              value={searchValue}
-              onChangeText={handleSearch}
-            />
-          </View>
-          <TouchableOpacity onPress={() => setShowFilters(true)}>
-            <Icon
-              name="sort-variant"
-              size={36}
-              color={filtersUsing ? ColorVariants.purple.default : ColorVariants.gray.dark}
-            />
-          </TouchableOpacity>
-        </View>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
   if (error) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={{ color: 'red' }}>{error}</Text>
+        <Text style={{color: 'red'}}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={loadTests} />
+      }>
       <View style={styles.filtrationContainer}>
         <View style={styles.inputContainer}>
           <TextInput
@@ -163,7 +144,11 @@ export const HomeScreen = () => {
           <Icon
             name="sort-variant"
             size={36}
-            color={filtersUsing ? ColorVariants.purple.default : ColorVariants.gray.dark}
+            color={
+              filtersUsing
+                ? ColorVariants.purple.default
+                : ColorVariants.gray.dark
+            }
           />
         </TouchableOpacity>
       </View>
@@ -172,21 +157,12 @@ export const HomeScreen = () => {
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" />
         </View>
-      ) : ((!showInitialTests && testsToShow.length === 0) || (!testsToShow)) ? (
+      ) : (!showInitialTests && testsToShow.length === 0) || !testsToShow ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Nothing found</Text>
         </View>
       ) : (
-        testsToShow?.map(test => (
-          <TestCard
-            key={test.id}
-            id={test.id}
-            label={test.title}
-            description={test.description}
-            isLiked={favourites.some(fav => fav.id === test.id)}
-            onToggleFavourite={() => toggleFavourite(test)}
-          />
-        ))
+        testsToShow?.map(test => <TestCard key={test.id} test={test} />)
       )}
 
       <FiltrationWindow
@@ -196,7 +172,7 @@ export const HomeScreen = () => {
         currentSort={sortOption}
         onFiltersChanged={handleFiltersChanged}
       />
-    </View>
+    </ScrollView>
   );
 };
 
@@ -217,9 +193,9 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: ApplicationBorderRadius.default,
     fontSize: 20,
-    backgroundColor: ColorVariants.gray.default,
+    backgroundColor: ColorVariants.gray.light,
     textAlign: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 12,
   },
   loaderContainer: {
@@ -235,5 +211,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     color: ColorVariants.darkGray.light,
+  },
+  container: {
+    flex: 1,
+    padding: 15,
+    backgroundColor: 'white',
   },
 });

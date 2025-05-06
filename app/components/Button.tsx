@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { ColorVariants, ApplicationBorderRadius } from '@theme/colors';
+import React, {useState} from 'react';
+import {Pressable, Text, StyleSheet, ViewStyle, TextStyle} from 'react-native';
+import {ColorVariants, ApplicationBorderRadius} from '@theme/colors';
 
 type ButtonVariant = 'purple' | 'grey';
 
@@ -37,9 +37,15 @@ const Button: React.FC<ButtonProps> = ({
 
   // Новая логика определения состояния
   const getButtonState = () => {
-    if (inactive) return 'inactive';
-    if (isPressed) return 'pressed';
-    if (light) return 'light';
+    if (inactive) {
+      return 'inactive';
+    }
+    if (isPressed) {
+      return 'pressed';
+    }
+    if (light) {
+      return 'light';
+    }
     return 'active';
   };
 
@@ -52,8 +58,7 @@ const Button: React.FC<ButtonProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={inactive}
-      style={[styles.base.button, style.button]}
-    >
+      style={[styles.base.button, style.button]}>
       <Text style={[styles.base.text, style.text]}>{children}</Text>
     </Pressable>
   );
@@ -68,7 +73,7 @@ type ButtonStyleSet = {
     button: ViewStyle;
     text: TextStyle;
   };
-  light: { // Новый тип состояния
+  light: {
     button: ViewStyle;
     text: TextStyle;
   };
@@ -85,51 +90,50 @@ const styles = StyleSheet.create({
       borderRadius: ApplicationBorderRadius.default,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingVertical: 15,
+      paddingVertical: 13,
     },
     text: {
       fontFamily: 'Inter',
       fontWeight: '400',
       fontSize: 20,
-      lineHeight: 20,
       letterSpacing: 0,
       textAlign: 'center',
     },
   },
   purple: {
     active: {
-      button: { backgroundColor: ColorVariants.purple.default },
-      text: { color: 'white' },
+      button: {backgroundColor: ColorVariants.purple.default},
+      text: {color: 'white'},
     },
     inactive: {
-      button: { backgroundColor: ColorVariants.purple.ultraLight },
-      text: { color: ColorVariants.purple.dark },
+      button: {backgroundColor: ColorVariants.purple.ultraLight},
+      text: {color: ColorVariants.purple.dark},
     },
     light: {
-      button: { backgroundColor: ColorVariants.purple.ultraLight },
-      text: { color: ColorVariants.purple.default },
+      button: {backgroundColor: ColorVariants.purple.ultraLight},
+      text: {color: ColorVariants.purple.default},
     },
     pressed: {
-      button: { backgroundColor: ColorVariants.purple.dark },
-      text: { color: 'white' },
+      button: {backgroundColor: ColorVariants.purple.dark},
+      text: {color: 'white'},
     },
   } as ButtonStyleSet,
   grey: {
     active: {
-      button: { backgroundColor: ColorVariants.gray.default },
-      text: { color: 'black' },
+      button: {backgroundColor: ColorVariants.gray.default},
+      text: {color: ColorVariants.darkGray.default},
     },
     inactive: {
-      button: { backgroundColor: ColorVariants.gray.ultraLight },
-      text: { color: ColorVariants.darkGray.default },
+      button: {backgroundColor: ColorVariants.gray.light},
+      text: {color: ColorVariants.gray.default},
     },
     light: {
-      button: { backgroundColor: ColorVariants.gray.ultraLight },
-      text: { color: ColorVariants.darkGray.default },
+      button: {backgroundColor: ColorVariants.gray.ultraLight},
+      text: {color: ColorVariants.darkGray.default},
     },
     pressed: {
-      button: { backgroundColor: ColorVariants.gray.dark },
-      text: { color: 'black' },
+      button: {backgroundColor: ColorVariants.gray.dark},
+      text: {color: 'black'},
     },
   } as ButtonStyleSet,
 });

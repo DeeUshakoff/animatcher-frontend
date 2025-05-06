@@ -1,86 +1,136 @@
-import { ColorVariants } from '@/theme/colors';
-import React from 'react';
-import { 
-  View,
-  Text,
-  TouchableOpacity, 
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import {ApplicationBorderRadius, ColorVariants} from '@/theme/colors';
+import React, {useState} from 'react';
+import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Button from './Button';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from '@navigation/types.ts';
+import {Test} from '@/models/TestModel.ts';
+import {useFavorites} from '@/hooks/useFavorites.ts';
+import {useTestProgress} from '@/hooks/useTestProgress.ts';
+import {useTestResult} from '@/hooks/useTestResult.ts';
+import {TextStyles} from '@theme/fonts.ts';
 
 type TestCardProps = {
-  id: string;
-  label: string;
-  description: string;
-  isLiked: boolean;
-  onToggleFavourite: () => void;
+  test: Test;
 };
 
-const TestCard: React.FC<TestCardProps> = ({ 
-  id, 
-  label, 
-  description, 
-  isLiked, 
-  onToggleFavourite 
-}) => {
+const TestCard: React.FC<TestCardProps> = ({test}) => {
+  const {isFavorite, addToFavorites, removeFromFavorites} = useFavorites();
+  const navigation =
+    useNavigation<StackNavigationProp<RootStackParamList, 'Tabs'>>();
+  const {progress, resetProgress} = useTestProgress(test.id);
+  const {getResult, deleteResult} = useTestResult();
+  const [liked, setLiked] = useState<boolean>(isFavorite(test.id));
+
+  const testResult = getResult(test.id);
+  const handleResultPress = () => {
+    if (testResult) {
+      navigation.push('TestResult', {
+        testId: test.id,
+        selectedOptions: testResult.selectedOptions,
+      });
+    }
+  };
+
+  const handleAgainPress = () => {
+    resetProgress();
+    deleteResult(test.id);
+    navigation.navigate('TestPass', {test: test});
+  };
+
+  const handlePress = () => {
+    navigation.navigate('Test', {test: test});
+  };
+
+  const handleLikePress = () => {
+    setLiked(!isFavorite(test.id));
+    if (isFavorite(test.id)) {
+      removeFromFavorites(test.id);
+    } else {
+      addToFavorites(test.id);
+    }
+  };
+
   return (
-    <View style={styles.card}>
-      <View style={{display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around'}}>
+    <TouchableOpacity onPress={handlePress} style={styles.card}>
+      <View
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'space-around',
+        }}>
         <View style={styles.cardInfo}>
-          <Text 
-            style={styles.label}
+          <Text
+            style={[
+              TextStyles.headline.medium,
+              {color: ColorVariants.darkGray.default},
+            ]}
             numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {label}
+            ellipsizeMode="tail">
+            {test.title}
           </Text>
-          <Text 
-            style={styles.description}
+          <Text
+            style={[
+              TextStyles.default.default,
+              {color: ColorVariants.darkGray.default},
+            ]}
             numberOfLines={3}
-            ellipsizeMode="tail"
-          >
-            {description}
+            ellipsizeMode="tail">
+            {test.description}
           </Text>
         </View>
 
-        <TouchableOpacity onPress={onToggleFavourite}>
+        <TouchableOpacity onPress={handleLikePress}>
           <Icon
-            name={isLiked ? 'heart' : 'heart-outline'}
+            name={liked ? 'heart' : 'heart-outline'}
             size={24}
-            color={isLiked ? ColorVariants.purple.default : ColorVariants.darkGray.light}
+            color={
+              liked ? ColorVariants.purple.default : ColorVariants.gray.dark
+            }
           />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.buttonsContainer}>
-        <View style={styles.buttonWrapper}>
-          <Button variant="grey">again</Button>
+      {progress ? (
+        <View style={styles.buttonsContainer}>
+          <View style={styles.buttonWrapper}>
+            <Button onPress={handleAgainPress} variant="grey">
+              again
+            </Button>
+          </View>
+          {testResult ? (
+            <View style={styles.buttonWrapper}>
+              <Button onPress={handleResultPress} variant="grey">
+                result
+              </Button>
+            </View>
+          ) : (
+            <View style={styles.buttonWrapper}>
+              <Button variant="grey">continue</Button>
+            </View>
+          )}
         </View>
-        <View style={styles.buttonWrapper}>
-          <Button variant="grey">result</Button>
-        </View>
-      </View>
-    </View>
+      ) : null}
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: ColorVariants.gray.light,
     padding: 15,
-    borderRadius: 10,
+    borderRadius: ApplicationBorderRadius.default,
     alignItems: 'flex-start',
     margin: 10,
     alignSelf: 'center',
-    height: '300px',
     width: '100%',
   },
   cardInfo: {
     flex: 1,
-    marginRight: 10
+    marginRight: 10,
   },
   content: {
     flex: 1,
@@ -93,18 +143,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
-  },
-  label: {
-    fontSize: 20,
-    fontWeight: 500,
-    color: '#000',
-    overflow: 'hidden'
-  },
-  description: {
-    fontSize: 20,
-    marginTop: 5,
-    color: '#000',
-    overflow: 'hidden'
   },
   likeButton: {
     padding: 8,
@@ -124,7 +162,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   buttonWrapper: {
-    flex: 1
+    flex: 1,
   },
 });
 

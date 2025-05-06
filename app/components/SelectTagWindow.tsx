@@ -1,11 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, FlatList, Alert } from 'react-native';
+import React, {useEffect, useMemo, useState} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  FlatList,
+  Alert,
+} from 'react-native';
 import ModalWindow from './ModalWindow';
-import { ApplicationBorderRadius, ColorVariants } from '@/theme/colors';
+import {ApplicationBorderRadius, ColorVariants} from '@/theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Button from './Button';
-import { searchTags, searchFranchises } from '@/api/apiService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {searchTags, searchFranchises} from '@/api/apiService';
+import {storage} from '@/storage/localStorage.ts';
 
 interface SelectionTagWindowProps {
   visible: boolean;
@@ -14,7 +22,10 @@ interface SelectionTagWindowProps {
   onTagsChanged: () => void;
 }
 
-const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps, onTagsChanged) => {
+const SelectTagWindow = (
+  {visible, tagName, onClose}: SelectionTagWindowProps,
+  onTagsChanged,
+) => {
   const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,13 +34,13 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const tagApiMethods = {
-    'franchises': searchFranchises,
-    'tags': searchTags
-  }
+    franchises: searchFranchises,
+    tags: searchTags,
+  };
 
   const loadSavedTags = async () => {
     try {
-      const savedTags = await AsyncStorage.getItem(tagName);
+      const savedTags = storage.getString(tagName);
       if (savedTags) {
         const parsedTags = JSON.parse(savedTags);
         if (Array.isArray(parsedTags) && parsedTags.length > 0) {
@@ -43,10 +54,13 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
 
   const filteredTags = useMemo(() => {
     if (searchValue.length < 3) return tags;
-    
-    return tags.filter(tag => 
-      (tag.tagName && tag.tagName.toLowerCase().includes(searchValue.toLowerCase())) ||
-      (tag.title && tag.title.toLowerCase().includes(searchValue.toLowerCase()))
+
+    return tags.filter(
+      tag =>
+        (tag.tagName &&
+          tag.tagName.toLowerCase().includes(searchValue.toLowerCase())) ||
+        (tag.title &&
+          tag.title.toLowerCase().includes(searchValue.toLowerCase())),
     );
   }, [tags, searchValue]);
 
@@ -61,16 +75,14 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
 
   const handleTagPress = (tag: object) => {
     const name = tag.tagName || tag.title || '';
-    setSelectedTags(prev => 
-      prev.includes(name)
-      ? prev.filter(tag => tag !== name)
-      : [...prev, name]
+    setSelectedTags(prev =>
+      prev.includes(name) ? prev.filter(tag => tag !== name) : [...prev, name],
     );
   };
 
   const handleApply = async () => {
     try {
-      await AsyncStorage.setItem(tagName, JSON.stringify(selectedTags));
+      storage.set(tagName, JSON.stringify(selectedTags));
       onTagsChanged?.();
       onClose();
     } catch (error) {
@@ -95,10 +107,7 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
         }
 
         // Параллельно загружаем данные и сохраненные теги
-        const [data] = await Promise.all([
-          apiMethod(),
-          loadSavedTags()
-        ]);
+        const [data] = await Promise.all([apiMethod(), loadSavedTags()]);
 
         setTags(data);
         setError(null);
@@ -116,7 +125,7 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
       setSearchValue('');
       setSelectedTags([]);
     }
-  }, [tagName, visible]); 
+  }, [tagName, visible]);
 
   return (
     <ModalWindow visible={visible} onClose={onClose} onApply={handleApply}>
@@ -133,7 +142,11 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
             <Text style={styles.title}>{tagName}</Text>
           </View>
           {selectedTags && (
-            <TouchableOpacity onPress={() => {setSelectedTags([]); onTagsChanged?.()}}>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedTags([]);
+                onTagsChanged?.();
+              }}>
               <Text style={styles.resetFilters}>reset all</Text>
             </TouchableOpacity>
           )}
@@ -152,18 +165,21 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
         <View style={styles.tagsContainer}>
           {loading ? (
             // добавьте лоадер со стилями, а то он где-то в чебоксарах
-            <View> 
-            </View>
+            <View></View>
           ) : (
             <FlatList
               data={filteredTags}
               extraData={selectedTags.length}
               style={styles.tagsContainer}
               contentContainerStyle={styles.listContent}
-              keyExtractor={item => `${item.id || item.tagId}_${item.tagName || item.title}`}
-              renderItem={({ item }) => (
-                <Button onPress={() => handleTagPress(item)} variant={isSelectedTag(item) ? 'purple' : 'grey'}>
-                    {item.tagName || item.title}
+              keyExtractor={item =>
+                `${item.id || item.tagId}_${item.tagName || item.title}`
+              }
+              renderItem={({item}) => (
+                <Button
+                  onPress={() => handleTagPress(item)}
+                  variant={isSelectedTag(item) ? 'purple' : 'grey'}>
+                  {item.tagName || item.title}
                 </Button>
               )}
               ListEmptyComponent={
@@ -178,14 +194,15 @@ const SelectTagWindow = ({ visible, tagName, onClose }: SelectionTagWindowProps,
 
         <View style={styles.buttonsContainer}>
           <View style={styles.buttonWrapper}>
-            <Button variant="grey" onPress={() => goBack()}>cancel</Button>
+            <Button variant="grey" onPress={() => goBack()}>
+              cancel
+            </Button>
           </View>
           <View style={styles.buttonWrapper}>
-            <Button 
-              variant="purple" 
+            <Button
+              variant="purple"
               inactive={selectedTags.length ? false : true}
-              onPress={() => handleApply()}
-            >
+              onPress={() => handleApply()}>
               apply
             </Button>
           </View>
@@ -232,12 +249,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     marginTop: -5, // костыльная история, чтоб не уезжало
-    marginLeft: -15
+    marginLeft: -15,
   },
   orderContainer: {
     display: 'flex',
     flexDirection: 'row',
-    gap: 10
+    gap: 10,
   },
   checkmark: {
     width: 20,
@@ -251,7 +268,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 80,
-    gap: 10
+    gap: 10,
   },
   buttonsContainer: {
     paddingTop: 25,
@@ -263,10 +280,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   buttonWrapper: {
-    flex: 1
+    flex: 1,
   },
   inputContainer: {
-    marginBottom: 20
+    marginBottom: 20,
   },
   input: {
     borderRadius: ApplicationBorderRadius.default,

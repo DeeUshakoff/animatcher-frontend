@@ -1,85 +1,57 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, StyleSheet, ScrollView, RefreshControl} from 'react-native';
+import {fetchTests} from '@/api/apiService';
 import TestCard from '@/components/TestCard';
-import { useIsFocused } from '@react-navigation/native';
-import useFavourites from '@/hooks/useFavourites';
+import {Test} from '@/models/TestModel';
+import {useFavorites} from '@/hooks/useFavorites.ts';
 
 export const FavouritesScreen = () => {
-  const { favourites, isLoading, error, toggleFavourite, loadFavourites } = useFavourites();
-  const isFocused = useIsFocused();
+  const [tests, setTests] = useState<Test[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const {favorites} = useFavorites();
 
-  useEffect(() => {
-    if (isFocused) {
-      loadFavourites();
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const data: Test[] = await fetchTests();
+
+      setTests(data.filter(item => favorites.includes(item.id)));
+    } catch (err) {
+      setError(err.message || 'Failed to load tests');
+    } finally {
+      setLoading(false);
     }
-  }, [isFocused]);
-
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{color: 'red'}}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {favourites.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No favourite tests yet</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={favourites}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TestCard
-              key={item.id}
-              id={item.id}
-              label={item.title}
-              description={item.description}
-              isLiked={true}
-              onToggleFavourite={() => toggleFavourite(item)}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-    </View>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={loadData} />
+      }>
+      {tests.map(test => (
+        <TestCard key={test.id} test={test} />
+      ))}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#666',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    textAlign: 'center',
+    backgroundColor: 'white',
+    padding: 15,
   },
 });
-
-export default FavouritesScreen;

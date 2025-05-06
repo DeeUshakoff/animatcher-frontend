@@ -1,21 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import ModalWindow from './ModalWindow';
-import { ColorVariants } from '@/theme/colors';
+import {ColorVariants} from '@/theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Button from './Button';
 import SelectTagWindow from './SelectTagWindow';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {storage} from '@/storage/localStorage.ts';
 
 interface FiltrationWindowProps {
   visible: boolean;
   onClose: () => void;
   onApply: () => void;
-  currentSort: string
+  currentSort: string;
   onFiltersChanged?: () => void;
 }
 
-const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersChanged }: FiltrationWindowProps) => {
+const FiltrationWindow = ({
+  visible,
+  onClose,
+  onApply,
+  currentSort,
+  onFiltersChanged,
+}: FiltrationWindowProps) => {
   const [selectedSort, setSelectedSort] = useState(currentSort);
   const [rating, setRating] = useState(0);
   const [direction, setDirection] = useState<'asc' | 'desc'>(null);
@@ -29,27 +35,24 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
 
   const checkActiveFilters = async () => {
     try {
-      const [
-        savedDirection, 
-        franchiseTags, 
-        regularTags
-      ] = await Promise.all([
-        AsyncStorage.getItem('sortDirection'),
-        AsyncStorage.getItem('franchises'),
-        AsyncStorage.getItem('tags')
+      const [savedDirection, franchiseTags, regularTags] = await Promise.all([
+        storage.getString('sortDirection'),
+        storage.getString('franchises'),
+        storage.getString('tags'),
       ]);
 
       const hasRatingFilter = rating > 0;
       const hasDirectionFilter = savedDirection !== null;
-      const hasFranchiseFilter = !!franchiseTags && JSON.parse(franchiseTags).length > 0;
+      const hasFranchiseFilter =
+        !!franchiseTags && JSON.parse(franchiseTags).length > 0;
       const hasTagsFilter = !!regularTags && JSON.parse(regularTags).length > 0;
 
       setHasActiveFilters(
-        hasRatingFilter || 
-        hasDirectionFilter || 
-        hasFranchiseFilter || 
-        hasTagsFilter ||
-        selectedSort !== 'rating'
+        hasRatingFilter ||
+          hasDirectionFilter ||
+          hasFranchiseFilter ||
+          hasTagsFilter ||
+          selectedSort !== 'rating',
       );
     } catch (error) {
       console.error('Error checking active filters:', error);
@@ -58,16 +61,18 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
 
   const checkSavedTags = async () => {
     try {
-      const savedDirection = await AsyncStorage.getItem('sortDirection');
+      const savedDirection = storage.getString('sortDirection');
       if (savedDirection) {
         setDirection(savedDirection as 'asc' | 'desc');
       }
       const [franchiseTags, regularTags] = await Promise.all([
-        AsyncStorage.getItem('franchises'),
-        AsyncStorage.getItem('tags')
+        storage.getString('franchises'),
+        storage.getString('tags'),
       ]);
 
-      const hasFranchises = franchiseTags ? JSON.parse(franchiseTags).length > 0 : false;
+      const hasFranchises = franchiseTags
+        ? JSON.parse(franchiseTags).length > 0
+        : false;
       const hasTags = regularTags ? JSON.parse(regularTags).length > 0 : false;
 
       setHasFranchiseTags(hasFranchises);
@@ -92,7 +97,7 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
 
   const resetTags = async (tagType: string) => {
     try {
-      await AsyncStorage.removeItem(tagType);
+      storage.delete(tagType);
       if (tagType === 'franchises') {
         setHasFranchiseTags(false);
       } else {
@@ -122,7 +127,7 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
   const handleApply = async () => {
     try {
       if (direction) {
-        await AsyncStorage.setItem('sortDirection', direction);
+        storage.set('sortDirection', direction);
       }
       onFiltersChanged?.();
       onClose();
@@ -140,13 +145,10 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
       setHasFranchiseTags(false);
       setHasTags(false);
       setChosenTag(false);
-      
-      await Promise.all([
-        AsyncStorage.removeItem('sortDirection'),
-        AsyncStorage.removeItem('franchises'),
-        AsyncStorage.removeItem('tags')
-      ]);
-      
+
+      storage.delete('sortDirection');
+      storage.delete('franchises');
+      storage.delete('tags');
     } catch (error) {
       console.error('Error resetting all filters:', error);
     }
@@ -156,15 +158,16 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
   const renderTagSection = (tagType: 'franchises' | 'tags') => {
     const isFranchise = tagType === 'franchises';
     const hasActiveTags = isFranchise ? hasFranchiseTags : hasTags;
-    
+
     return (
-      <View style={[styles.option, {marginRight: -10}]}>
-        <Text 
+      <TouchableOpacity
+        onPress={() => selectTag(tagType)}
+        style={[styles.option, {marginRight: -10}]}>
+        <Text
           style={[
             styles.optionText,
-            hasActiveTags && { color: ColorVariants.purple.default }
-          ]}
-        >
+            hasActiveTags && {color: ColorVariants.purple.default},
+          ]}>
           {isFranchise ? 'franchise' : 'tags'}
         </Text>
 
@@ -174,15 +177,18 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
               <Text style={styles.resetFilters}>reset</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={() => selectTag(tagType)}>
-            <Icon
-              name="chevron-right"
-              size={30}
-              color={hasActiveTags ? ColorVariants.purple.default : ColorVariants.gray.dark}
-            />
-          </TouchableOpacity>
+
+          <Icon
+            name="chevron-right"
+            size={30}
+            color={
+              hasActiveTags
+                ? ColorVariants.purple.default
+                : ColorVariants.gray.dark
+            }
+          />
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -201,56 +207,69 @@ const FiltrationWindow = ({ visible, onClose, onApply, currentSort, onFiltersCha
         <View style={styles.option}>
           <Text style={styles.optionText}>rating</Text>
           <View style={styles.rowContainer}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity 
-                key={star} 
+            {[1, 2, 3, 4, 5].map(star => (
+              <TouchableOpacity
+                key={star}
                 onPress={() => setRating(star)}
-                activeOpacity={0.7}
-              >
+                activeOpacity={0.7}>
                 <Icon
                   name={star <= rating ? 'star' : 'star-outline'}
                   size={24}
-                  color={star <= rating ? ColorVariants.purple.default : ColorVariants.gray.dark}
+                  color={
+                    star <= rating
+                      ? ColorVariants.purple.default
+                      : ColorVariants.gray.dark
+                  }
                 />
               </TouchableOpacity>
             ))}
           </View>
         </View>
-        
+
         <View style={styles.option}>
           <Text style={styles.optionText}>rating order</Text>
-          
+
           <View style={styles.orderContainer}>
             <TouchableOpacity onPress={() => handleDirectionChange('asc')}>
-              <Text style={[
-                {fontSize: 20},
-                direction === 'asc' ? {color: ColorVariants.purple.default} : {color: 'black'}
-              ]}>
+              <Text
+                style={[
+                  {fontSize: 20},
+                  direction === 'asc'
+                    ? {color: ColorVariants.purple.default}
+                    : {color: 'black'},
+                ]}>
                 asc
               </Text>
             </TouchableOpacity>
-      
+
             <TouchableOpacity onPress={() => handleDirectionChange('desc')}>
-              <Text style={[
-                {fontSize: 20},
-                direction === 'desc' ? {color: ColorVariants.purple.default} : {color: 'black'}
-              ]}>
+              <Text
+                style={[
+                  {fontSize: 20},
+                  direction === 'desc'
+                    ? {color: ColorVariants.purple.default}
+                    : {color: 'black'},
+                ]}>
                 desc
               </Text>
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {renderTagSection('franchises')}
         {renderTagSection('tags')}
 
         <View style={styles.buttonsContainer}>
-            <View style={styles.buttonWrapper}>
-              <Button variant="grey" onPress={onClose}>cancel</Button>
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button variant="purple" onPress={handleApply}>apply</Button>
-            </View>
+          <View style={styles.buttonWrapper}>
+            <Button variant="grey" onPress={onClose}>
+              cancel
+            </Button>
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button variant="purple" onPress={handleApply}>
+              apply
+            </Button>
+          </View>
         </View>
       </View>
 
@@ -279,7 +298,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     display: 'flex',
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
   resetFilters: {
     fontSize: 20,
@@ -308,7 +327,7 @@ const styles = StyleSheet.create({
   orderContainer: {
     display: 'flex',
     flexDirection: 'row',
-    gap: 10
+    gap: 10,
   },
   checkmark: {
     width: 20,
@@ -321,15 +340,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 'auto',
     paddingTop: 20,
-    gap: 10
+    gap: 10,
   },
   buttonWrapper: {
-    flex: 1
+    flex: 1,
   },
 });
 
 export default FiltrationWindow;
+
 function setChosenTag(arg0: boolean) {
   throw new Error('Function not implemented.');
 }
-

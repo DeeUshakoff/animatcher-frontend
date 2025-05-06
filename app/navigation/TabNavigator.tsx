@@ -1,12 +1,11 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {NavigationContainer} from '@react-navigation/native';
 import {HomeScreen} from '@screens/HomeScreen';
 import {FavouritesScreen} from '@screens/FavouritesScreen';
 import {HistoryScreen} from '@screens/HistoryScreen';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {ColorVariants} from '@theme/colors';
-import {StyleSheet} from 'react-native';
+import {SafeAreaView, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {TextStyles} from '@theme/fonts';
 
@@ -28,10 +27,12 @@ export const TabNavigator = () => {
   const insets = useSafeAreaInsets();
 
   return (
-    <NavigationContainer>
+    <SafeAreaView style={styles.safeAreaStyle}>
       <Tab.Navigator
         safeAreaInsets={insets}
         screenOptions={({route}) => ({
+          headerShadowVisible: false,
+          headerTitleStyle: TextStyles.headline.medium,
           tabBarIcon: ({color, size}) => (
             <MaterialIcons
               name={TAB_ICONS[route.name]}
@@ -58,11 +59,14 @@ export const TabNavigator = () => {
         <Tab.Screen name="favourite" component={FavouritesScreen} />
         <Tab.Screen name="history" component={HistoryScreen} />
       </Tab.Navigator>
-    </NavigationContainer>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeAreaStyle: {
+    flex: 1,
+  },
   tabBarStyleBase: {
     backgroundColor: 'white',
     borderTopWidth: 0,
